@@ -1,0 +1,97 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+import warnings
+
+# Evitar el error "No such keys(s): 'mode.use_inf_as_null'"
+warnings.filterwarnings("ignore", message="No such keys(s): 'mode.use_inf_as_null'")
+
+#Datos de biomasa por réplica
+
+data = {
+    "Tratamiento": range(1, 13),
+    "R1": [3.91, 7.88, 9.21, 9.31, 7.89, 9.79, 7.32, 10.78, 7.92, 11.41, 10.80, 10.39],
+    "R2": [10.60, 11.97, 11.50, 12.37, 8.08, 11.02, 11.66, 4.40, 8.57, 10.91, 3.97, 6.51],
+    "R3": [2.18, 19.19, 15.44, 2.86, 16.88, 1.22, 3.91, 21.39, 15.03, 3.08, 18.64, 19.27]
+}
+
+df = pd.DataFrame(data)
+
+#Análisis estadístico
+
+df["Promedio"] = df[["R1", "R2", "R3"]].mean(axis=1)
+df["Desviacion"] = df[["R1", "R2", "R3"]].std(axis=1)
+
+print("\n=== Promedios de biomasa por tratamiento ===")
+print(df[["Tratamiento", "Promedio", "Desviacion"]])
+
+#Gráfica
+
+plt.figure(figsize=(8, 4))
+sns.barplot(x="Tratamiento", y="Promedio", data=df, palette="viridis", capsize=0.1)
+plt.title("Promedio de biomasa por tratamiento (g/L)")
+plt.ylabel("Concentración (g/L)")
+plt.xlabel("Tratamiento")
+plt.tight_layout()
+plt.show()
+
+#ANOVA 
+
+df_long = df.melt(id_vars=["Tratamiento"], value_vars=["R1", "R2", "R3"],
+                  var_name="Replica", value_name="Concentracion")
+
+# Modelo ANOVA
+modelo = ols('Concentracion ~ C(Tratamiento)', data=df_long).fit()
+anova_table = sm.stats.anova_lm(modelo, typ=2)
+
+print("\n=== ANOVA de una vía ===")
+print(anova_table)
+
+#Análisis de residuos
+
+residuales = modelo.resid
+fig, ax = plt.subplots(1, 2, figsize=(10, 4))
+
+# Histograma de residuos
+sns.histplot(residuales, kde=True, ax=ax[0])
+ax[0].set_title("Distribución de residuos")
+
+# QQ-plot
+sm.qqplot(residuales, line='s', ax=ax[1])
+ax[1].set_title("QQ-Plot de residuos")
+
+plt.tight_layout()
+plt.show()
+
+#Verificación de normalidad de datos
+
+shapiro_test = stats.shapiro(residuales)
+levene_test = stats.levene(*[df_long.loc[df_long.Tratamiento == t, "Concentracion"]
+                             for t in df_long.Tratamiento.unique()])
+
+print("\n=== Pruebas de supuestos ===")
+print("Prueba de normalidad (Shapiro-Wilk):", shapiro_test)
+print("Prueba de homogeneidad (Levene):", levene_test)
+
+#Pruebas post-hoc
+
+tukey = pairwise_tukeyhsd(endog=df_long["Concentracion"],
+                          groups=df_long["Tratamiento"],
+                          alpha=0.05)
+
+print("\n=== Prueba de Tukey (comparación de medias) ===")
+print(tukey)
+
+# Gráfico de Tukey
+tukey.plot_simultaneous(figsize=(9, 6))
+plt.title("Intervalos de confianza (Tukey HSD)")
+plt.show()
+
+
+mejor = df.loc[df["Promedio"].idxmax()]
+print(f"\n El mejor tratamiento es el N°{int(mejor.Tratamiento)} "
+      f"con {mejor.Promedio:.2f} g/L de concentración promedio.")

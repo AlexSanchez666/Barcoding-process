@@ -1,0 +1,42 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+#Análisis de biomasa
+
+data = {
+    "Tratamiento": range(1, 13),
+    "R1": [3.91, 7.88, 9.21, 9.31, 7.89, 9.79, 7.32, 10.78, 7.92, 11.41, 10.80, 10.39],
+    "R2": [10.60, 11.97, 11.50, 12.37, 8.08, 11.02, 11.66, 4.40, 8.57, 10.91, 3.97, 6.51],
+    "R3": [2.18, 19.19, 15.44, 2.86, 16.88, 1.22, 3.91, 21.39, 15.03, 3.08, 18.64, 19.27]
+}
+#En data colocas los datos de tu biomasa (si es tu variable de respuesta) 
+df = pd.DataFrame(data)
+
+# Promedio de biomasa por tratamiento
+df["Promedio_X"] = df[["R1", "R2", "R3"]].mean(axis=1)
+mejor_tratamiento = df.loc[df["Promedio_X"].idxmax(), "Tratamiento"]
+
+
+#Organizamos tus datos y hacemos un boxplot
+df_melt = df.melt(id_vars="Tratamiento", value_vars=["R1", "R2", "R3"],
+                  var_name="Réplica", value_name="X (g/L)")
+
+plt.figure(figsize=(9,5))
+cajas = plt.boxplot(
+    [df_melt.loc[df_melt["Tratamiento"] == t, "X (g/L)"] for t in df["Tratamiento"]],
+    patch_artist=True,
+    labels=df["Tratamiento"]
+)
+
+# Colores chidos para que se vea cool tu huevada
+for i, box in enumerate(cajas['boxes'], start=1):
+    if i == mejor_tratamiento:
+        box.set(facecolor="#ff0000")  
+    else:
+        box.set(facecolor="#ffffff")  # gris para los demás
+
+plt.title("Distribución de biomasa (X) por tratamiento", fontsize=13)
+plt.suptitle("")  # elimina título automático
+plt.xlabel("Tratamiento", fontsize=11)
+plt.ylabel("Biomasa (g/L)", fontsize=11)
+plt.grid(axis="y", linestyle="--", alpha=0.5)

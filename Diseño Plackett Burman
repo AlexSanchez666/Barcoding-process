@@ -1,0 +1,49 @@
+import pandas as pd
+import numpy as np
+
+factores = {
+    "Factor 1": ["Nivel 1","Nivel -1"],   
+    "Factor 2": ["Nivel 1","Nivel -1"],        
+    "Factor 3": ["Nivel 1","Nivel -1"],                 
+    "Factor 4": ["Nivel 1","Nivel -1"],                
+    "Factor 5": ["Nivel 1","Nivel -1"],                 
+    "Factor 6": ["Nivel 1","Nivel -1"],                 
+    "Factor 8": ["Nivel 1","Nivel -1"],                
+    "Factor 9": ["Nivel 1","Nivel -1"]            
+}
+
+#Aquí va la matriz para el diseño PB: Ejemplo de 12 tratamientos con 3 réplicas analizando 8 factores
+PB_matrix = np.array([
+    [  1,   1,   1,   1,   1,   1,   1,  -1],
+    [  1,   1,   1,  -1,  -1,  -1,  -1,   1],
+    [  1,  -1,  -1,   1,   1,  -1,  -1,   1],
+    [  1,  -1,  -1,  -1,  -1,   1,   1,   1],
+    [ -1,   1,  -1,   1,  -1,   1,  -1,   1],
+    [ -1,   1,  -1,  -1,   1,  -1,   1,   1],
+    [ -1,  -1,   1,   1,  -1,  -1,   1,   1],
+    [ -1,  -1,   1,  -1,   1,   1,  -1,   1],
+    [  1,   1,  -1,   1,  -1,   1,   1,  -1],
+    [  1,  -1,   1,  -1,   1,  -1,   1,  -1],
+    [ -1,   1,   1,  -1,   1,   1,  -1,  -1],
+    [ -1,  -1,  -1,   1,  -1,  -1,  -1,  -1]
+])
+
+#Aquí un data frame para ver cuanto le corresponde a cada UE
+df = pd.DataFrame(PB_matrix, columns=list(factores.keys()))
+df.insert(0, "Tratamiento", range(1, len(df) + 1))
+
+# Mapear niveles -1 y +1 a valores reales de cada factor
+for factor in factores.keys():
+    bajo, alto = factores[factor]
+    df[factor] = df[factor].map({-1: bajo, 1: alto})
+
+#Réplicas
+df_replicas = df.loc[df.index.repeat(3)].reset_index(drop=True)
+df_replicas["Réplica"] = np.tile([1, 2, 3], len(df))
+
+#Para que se haga un excel directo y sea más fácil para que veas, ñañ@
+nombre_archivo = "Diseño_PlackettBurman_Como_quieras_llamarle_mijo.xlsx"
+df_replicas.to_excel(nombre_archivo, index=False)
+
+print(f"Pilas guambra! El archivo Excel generado: {nombre_archivo}")
+print(f"Número total de corridas: {len(df_replicas)}")

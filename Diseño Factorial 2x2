@@ -1,0 +1,36 @@
+import itertools
+import pandas as pd
+#Fuente de carbono
+factor_carbono = {
+    "name": "Fuente de carbono",
+    "levels": ["Suero de leche (pre-tratado)", "Infusión de papa"]
+}
+#Fuente de nitrógeno
+factor_urea = {
+    "name": "Urea agrícola",
+    "levels": ["(-) Bajo: 0.5 g/L", "(+) Alto: 5 g/L"]
+}
+
+replicas = 3  # número de réplicas por tratamiento (lo más recomendado)
+
+combinaciones = list(itertools.product(
+    factor_carbono["levels"],
+    factor_urea["levels"]
+))
+
+diseño = []
+for r in range(1, replicas + 1):
+    for c in combinaciones:
+        diseño.append([c[0], c[1], r])
+
+df = pd.DataFrame(diseño, columns=[
+    factor_carbono["name"],
+    factor_urea["name"],
+    "Réplica"
+])
+
+print("Diseño experimental factorial 2x2:")
+print(df)
+
+print("\nNúmero total de unidades experimentales:", len(df))
+
